@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import base64, urllib2, xml.etree.ElementTree, os, sys, socket, tempfile, subprocess
+import base64, urllib2, xml.etree.ElementTree, os, sys, socket, tempfile, subprocess, datetime
 from optparse import OptionParser
 
 def log_shell_cmd(cmd, heading):
@@ -173,7 +173,10 @@ if __name__ == '__main__':
     set_header(options.username,options.password)
     test_port()
     global data_dir
-    data_dir = tempfile.mkdtemp()
+    home=os.getenv("HOME")
+    suffix = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
+    data_dir = '{0}/r1soft_migrate_reports_{1}'.format(home,suffix)
+    os.mkdir(data_dir)
     try:
         for i in search_values:
             results = analyse(i)
@@ -182,6 +185,8 @@ if __name__ == '__main__':
         log_shell_cmd("df -h | grep -v /dev/shm", '\nCURRENT DISK USAGE :\n')
         log_shell_cmd("grep -iPv '^[^/|u]|^$' /etc/fstab", '\nCURRENT FSTAB ENTRIES :\n')
         log_shell_cmd("pvs;echo;vgs;echo;lvs", '\nCURRENT LVM CONFIGURATION :\n')
+        log_shell_cmd("vgcfgbackup -f {0}/lvm_config_backup".format(data_dir), '\nBACKING UP LVM CONFIG TO: {0}/lvm_config_backup\n'.format(data_dir))
+        log_shell_cmd("ls -d /sys/block/sd*/device/scsi_device/* |awk -F '[/]' '{print $4,\"- SCSI\",$7}'", '\nDISK SCSI IDs :\n')
         print '\nReport written to {0}/r1soft_report\n'.format(data_dir)
     except Exception as e:
         print '\nApplication failed with the following error: %s\n' % e
