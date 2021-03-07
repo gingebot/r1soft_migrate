@@ -179,8 +179,9 @@ if __name__ == '__main__':
             results = analyse(i)
             print_data(results, i['space'])
         log_shell_cmd( "mount | grep -Ev 'type proc|type sysfs|type devpts|type tmpfs| type binfmt_misc'", '\nCURRENT FILESYSTEM MOUNTS :\n')
-        log_shell_cmd("grep -iPv '^[^/|u]|^$' /etc/fstab", '\nCURRENT FSTAB ENTRIES\n')
-        log_shell_cmd("pvs;echo;vgs;echo;lvs", '\nCURRENT LVM CONFIGURATION\n')
+        log_shell_cmd("df -h | grep -v /dev/shm", '\nCURRENT DISK USAGE :\n')
+        log_shell_cmd("grep -iPv '^[^/|u]|^$' /etc/fstab", '\nCURRENT FSTAB ENTRIES :\n')
+        log_shell_cmd("pvs;echo;vgs;echo;lvs", '\nCURRENT LVM CONFIGURATION :\n')
         print '\nReport written to {0}/r1soft_report\n'.format(data_dir)
     except Exception as e:
         print '\nApplication failed with the following error: %s\n' % e
