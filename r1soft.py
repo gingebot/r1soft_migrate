@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import base64, urllib2, xml.etree.ElementTree, os, sys, socket, tempfile, subprocess, datetime
+import base64, urllib2, xml.etree.ElementTree, os, sys, socket, tempfile, subprocess, datetime, traceback
 from optparse import OptionParser
 
 def log_shell_cmd(cmd, heading):
@@ -29,7 +29,6 @@ def set_header(username,password):
     headers = {'Authorization': 'Basic %s' % auth_key}
 
 def api_request(url_end_part,data,headers):
-   
     full_url='%s%s' % ('http://{0}:{1}/'.format(api_host,api_port), url_end_part)
     req = urllib2.Request(full_url,data,headers=headers)
     response = urllib2.urlopen(req)
@@ -52,6 +51,8 @@ def print_data(data,title):
         data.insert(0,header)
         for i in data:
             for key,val in i.iteritems():
+                if not val:
+                    val = ''
                 if (len(val) + 2) > fieldlen[key]:
                     fieldlen[key] = (len(val) + 2)
         for key,val in fieldlen.iteritems():
@@ -162,7 +163,7 @@ if __name__ == '__main__':
     parser.add_option('-p', '--password', help='r1soft password')
     parser.add_option('-P', '--port', help='api port, default=9080', default='9080')
     parser.add_option('-i', '--host', help='api host IP, default=127.0.0.1', default='localhost')
-    options, args = parser.parse_args() 
+    options, args = parser.parse_args()
     global api_port
     global api_host
     api_port=int(options.port)
@@ -185,8 +186,10 @@ if __name__ == '__main__':
         log_shell_cmd("df -h | grep -v /dev/shm", '\nCURRENT DISK USAGE :\n')
         log_shell_cmd("grep -iPv '^[^/|u]|^$' /etc/fstab", '\nCURRENT FSTAB ENTRIES :\n')
         log_shell_cmd("pvs;echo;vgs;echo;lvs", '\nCURRENT LVM CONFIGURATION :\n')
-        log_shell_cmd("vgcfgbackup -f {0}/lvm_config_backup".format(data_dir), '\nBACKING UP LVM CONFIG TO: {0}/lvm_config_backup\n'.format(data_dir))
+        log_shell_cmd("vgcfgbackup -f {0}/vg_backup_%s".format(data_dir), '\nBACKING UP LVM VG CONFIG(S) TO: {0}/vg_backup_vg\n'.format(data_dir))
         log_shell_cmd("ls -d /sys/block/sd*/device/scsi_device/* |awk -F '[/]' '{print $4,\"- SCSI\",$7}'", '\nDISK SCSI IDs :\n')
         print '\nReport written to {0}/r1soft_report\n'.format(data_dir)
     except Exception as e:
+        traceback.print_exc()
         print '\nApplication failed with the following error: %s\n' % e
+
