@@ -20,8 +20,9 @@ def test_port():
     result = sock.connect_ex((api_host,api_port))
     sock.close()
     if result != 0:
-        print "API Service is no listening on port {0}".format(api_port)
-        sys.exit()
+        writer("\nAPI Service is not listening on port {0}, skipping r1soft analysis\n".format(api_port).upper())
+        return False
+    return True
 
 def set_header(username,password):
     global headers
@@ -172,16 +173,21 @@ if __name__ == '__main__':
         print "\noption -p must be used with a valid password\n"
         sys.exit()
     set_header(options.username,options.password)
-    test_port()
     global data_dir
     home=os.getenv("HOME")
     suffix = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
     data_dir = '{0}/r1soft_migrate_reports_{1}'.format(home,suffix)
     os.mkdir(data_dir)
     try:
-        for i in search_values:
-            results = analyse(i)
-            print_data(results, i['space'])
+        if test_port():
+            try:
+                for i in search_values:
+                    results = analyse(i)
+                    print_data(results, i['space'])
+            except Exception as e:
+                writer("\nr1soft API service failure, skipping r1soft analysis\n".format(api_port).upper())
+                writer(traceback.format_exc())
+                writer('\nApplication failed with the following error: %s\n' % e)
         log_shell_cmd( "mount | grep -Ev 'type proc|type sysfs|type devpts|type tmpfs| type binfmt_misc'", '\nCURRENT FILESYSTEM MOUNTS :\n')
         log_shell_cmd("df -h | grep -v /dev/shm", '\nCURRENT DISK USAGE :\n')
         log_shell_cmd("grep -iPv '^[^/|u]|^$' /etc/fstab", '\nCURRENT FSTAB ENTRIES :\n')
